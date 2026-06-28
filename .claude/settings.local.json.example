@@ -1,0 +1,64 @@
+// .claude/settings.local.json.example
+// ---------------------------------------------------------------------------
+// TEMPLATE ONLY. Claude Code does NOT load this file — it loads
+// .claude/settings.local.json (no ".example"). Copy ONE of the tiers below into
+// that file to opt in. .claude/settings.local.json is gitignored and stays local.
+//
+// (JSON has no comments; strip the // lines when you copy a block.)
+//
+// What this enables: the committed PreToolUse hook at
+// .claude/hooks/web-approve.py auto-approves web calls so a search run doesn't
+// stop at a prompt on every page. It is allowlist-based on purpose — see below.
+// ---------------------------------------------------------------------------
+
+// ===========================================================================
+// TIER (a) — RECOMMENDED. Allowlist-gated WebFetch + read-only WebSearch.
+// ===========================================================================
+// WebSearch is auto-approved (it only returns snippets — there is no channel for
+// it to send your data anywhere). WebFetch is auto-approved ONLY for hosts on your
+// local .claude/web-allowlist.txt (exact host or a dot-boundary subdomain); every
+// other fetch still prompts. This keeps the convenience for the sites you actually
+// search while a fetch to a novel/untrusted domain — the realistic exfiltration
+// risk — still stops for your confirmation.
+//
+// Setup:
+//   1. Copy the JSON object below into .claude/settings.local.json
+//   2. Create .claude/web-allowlist.txt with one host per line, e.g.:
+//        charityjob.co.uk
+//        greenhouse.io
+//      (subdomains like boards.greenhouse.io match automatically)
+//
+// {
+//   "permissions": {
+//     "allow": ["WebSearch"]
+//   },
+//   "hooks": {
+//     "PreToolUse": [
+//       {
+//         "matcher": "WebFetch|WebSearch",
+//         "hooks": [
+//           {
+//             "type": "command",
+//             "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/web-approve.py\""
+//           }
+//         ]
+//       }
+//     ]
+//   }
+// }
+
+// ===========================================================================
+// TIER (b) — ALTERNATIVE (weaker; understand the tradeoff before using).
+// ===========================================================================
+// Blanket auto-approve of every WebFetch and WebSearch — no allowlist, nothing
+// prompts. More convenient, but it removes the one stop that would catch a fetch
+// to an attacker-chosen domain. RISK: if your profile holds sensitive data, a
+// prompt-injection or a mistaken URL could exfiltrate it with no confirmation.
+// Tier (a) is the default for exactly this reason. Only use (b) on a profile you
+// are comfortable fetching anywhere from.
+//
+// {
+//   "permissions": {
+//     "allow": ["WebFetch", "WebSearch"]
+//   }
+// }

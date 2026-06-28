@@ -14,6 +14,11 @@ profiles/*
 _run-urls.json
 _run-*.json
 
+# Local-only web-access opt-in (never committed; see README "Web access").
+# The hook script (.claude/hooks/) and the .example template ARE committed.
+.claude/settings.local.json
+.claude/web-allowlist.txt
+
 # Scratch / analysis dumps
 systemanalysis.txt
 

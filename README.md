@@ -114,6 +114,37 @@ git config core.hooksPath .githooks
 
 **Never commit real profile data.**
 
+## Web access (optional, local)
+
+A search run makes many web calls. To avoid a permission prompt on every one, the repo
+ships an **opt-in, allowlist-based** approval hook at
+[.claude/hooks/web-approve.py](.claude/hooks/web-approve.py). It is **inert until you
+wire it in locally** — cloning the repo changes nothing about your web access and adds
+no risk.
+
+What it does when enabled: it auto-approves **WebSearch** (read-only — snippets only, no
+channel to send your data out), and auto-approves **WebFetch only for hosts on your local
+allowlist** (exact host or a dot-boundary subdomain — `greenhouse.io` matches
+`boards.greenhouse.io` but not `evil-greenhouse.io`). Every other fetch still prompts. It
+**never blocks** anything and **fails safe**: on any error, a missing allowlist, or an
+unparseable URL it passes through to the normal prompt — it never approves on uncertainty.
+
+It's allowlist-based rather than blanket on purpose: a fetch to an attacker-chosen domain
+is the realistic way profile data could leak (e.g. via prompt injection), and that case is
+exactly the one kept behind a prompt.
+
+To enable (entirely local, gitignored):
+
+1. Copy **tier (a)** from
+   [.claude/settings.local.json.example](.claude/settings.local.json.example) into
+   `.claude/settings.local.json`.
+2. Create `.claude/web-allowlist.txt` with one host per line (e.g. `charityjob.co.uk`,
+   `greenhouse.io`).
+
+The `.example` also documents a blanket **tier (b)** (auto-approve all fetches) with its
+honest tradeoff — more convenient, but it removes the one stop that catches exfiltration,
+so it's weaker for any profile holding sensitive data. Tier (a) is the default.
+
 ## Current status / limitations
 
 This is an early public release of a working engine. Honest state:
@@ -125,7 +156,8 @@ This is an early public release of a working engine. Honest state:
   run procedure deliberately renders against it as-is for now.
 - 🚧 The `urls.md` numbered-manifest format is specified but its full population /
   manifest work is pending.
-- 🚧 A web-source allowlist for retrieval is pending.
+- ✅ An optional, local, allowlist-based web-access hook ships (see "Web access");
+  it's inert until opted in.
 - 🚧 An `examples/` profile for new users is not yet built.
 
 Treat the schemas and procedure as the stable contract; expect the template and the
