@@ -1,7 +1,7 @@
 ---
 name: job-search-run
 description: The generic per-profile job-search run procedure for this engine. Followed once per selected profile. Deterministic bookkeeping is delegated to skill/lib/*; judgement stays with the agent.
-manifest_version: 1.1.0
+manifest_version: 1.2.0
 ---
 
 # SKILL.md — the generic run procedure
@@ -10,10 +10,16 @@ This is the engine's run procedure, followed **once per selected profile**. It i
 generic: nothing here hardcodes a particular profile's ranking, income, or geography.
 Each profile self-describes those in its own files.
 
-`manifest_version` (frontmatter, currently `1.1.0`) versions this procedure and the
+`manifest_version` (frontmatter, currently `1.2.0`) versions this procedure and the
 query-manifest contract. **Query ids are stable across versions, and a retired query
 id is never reused.** Bump `manifest_version` when the contract changes; record the
 version in every `run-log.json` and on every dashboard.
+
+**Changes in 1.2.0:** the query manifest is now a parseable, numbered `Qnn:` block in
+each profile's `targets.md` (delimited by `<!-- manifest:begin/end -->`), linted by
+`lint_manifest.py`; the vocabulary-vs-filter boundary is stated as an enforceable
+contract (§4); the run consumes the manifest then a soft targeting layer in three
+ordered steps (§5); and the self-audit covers both layers.
 
 **Changes in 1.1.0:** `urls.md` is now a flat `flag, url` CSV (was a YAML
 block-sequence); `seen-roles.json` records carry an `absent_runs` counter and a
@@ -72,25 +78,66 @@ Rank strictly on the profile's stated decision rules — its tiers, its income
 floor/target, its geography model, its tiebreakers. The engine does not impose a
 ranking. If the profile defines tiers (e.g. fit windows), render to them.
 
-## 4. VOCABULARY vs FILTERS (keep them formally separate)
-- **SEARCH VOCABULARY = role-type terms, searched wide.** These go *into* queries.
-  Promote **"change communications"** and **"transformation communications"** to
-  first-class search terms alongside the profile's own terms.
-- **JUDGING FILTERS = length/duration, salary band, geography, social-load.** These are
-  applied **ONLY after retrieval**, never inside a query.
-- **Hard rule: duration or length must NEVER appear in a query string.** You do not
-  search "2 month contract"; you search the role type wide, then filter by duration
-  when judging.
+## 4. VOCABULARY vs FILTERS (the enforceable boundary)
+Queries carry **vocabulary**; everything personal is a **post-retrieval filter**. This
+boundary is enforced by `lint_manifest.py` (warns on a banned token in any query) — it
+is a contract, not a guideline.
 
-## 5. QUERY MANIFEST
-The profile's `targets.md` defines the queries. **Execute every query verbatim — all
-of them — before any judging.** Number them `Q01`, `Q02`, … in manifest order. Record
-which queries returned nothing (`queries_null`). Stable ids: once a query has an id,
-that id keeps its meaning across runs and versions; retire rather than renumber.
+- **NEVER in a query string** (these are filters, applied only after retrieval):
+  - **numeric durations** — e.g. "3 month", "up to 12 months", "2–4 months";
+  - **salary band** — any £ figure or "Nk" band;
+  - **social-load exclusion** — "no social media" and the like;
+  - **the two-state geography weighting** — bare **"London"** on every line. Putting
+    "London" in every query suppresses remote/hybrid recall, so it is a recall risk
+    and must be avoided.
+- **ALWAYS searched wide as vocabulary** (these go *into* queries):
+  - **contract-shape terms** — interim, contract, fixed-term, maternity cover,
+    secondment;
+  - **role-type terms** — the profile's own, **plus first-class entries for
+    "change communications" and "transformation communications"** (the exact
+    vocabulary gap that hid a missed role — give them their own `Qnn` lines).
+- **Geography is predominantly a POST-retrieval filter.** The default manifest searches
+  role-type wide and filters geography afterwards. A **small number of explicitly
+  geo-scoped queries is allowed where genuinely useful** (e.g. a relocation-watch
+  region — "… Exeter", "… Devon"); the lint flags bare "london", not these scoped
+  exceptions.
 
-The source list in `targets.md` is a **floor, not a ceiling** — honour its standing
-directive to attempt at least two off-list sources per run and record the full reach
-of sites hit (productive or not) for the dashboard's "Net cast" list.
+## 5. QUERY MANIFEST + SOFT LAYER (three ordered steps)
+The profile's `targets.md` holds two layers: a **hard query manifest** and a **soft
+targeting layer**. Consume them in this order — manifest first, judgement second.
+
+**The manifest contract (parseable).** The manifest is a delimited block in
+`targets.md`:
+```
+<!-- manifest:begin -->
+Q01: digital project manager contract
+Q02: interim communications charity
+<!-- manifest:end -->
+```
+One query per line, `Qnn: <query string>`, ids zero-padded and **stable** — a retired
+query keeps its number; a new query takes the next free id; **a retired id is never
+reused** (gaps are legitimate). Inside the block, blank and comment lines are ignored.
+
+**Before executing, lint it:** `python3 skill/lib/lint_manifest.py --in
+profiles/<name>/targets.md`. A **structural failure stops the run** (fix the manifest);
+**warnings** (a banned token slipped into a query, per §4) are surfaced in the
+self-audit, not silently ignored.
+
+**Step 1 — run the manifest verbatim.** Execute **every `Qnn`** before any judging.
+Record which ids returned nothing (`queries_null` / manifest ids null). Do not skip,
+reorder-away, or merge queries.
+
+**Step 2 — apply the soft targeting layer as judgement.** Only after the manifest:
+- **sweep named orgs** by search (a named org with no careers URL is searched here;
+  careers URLs remain the `urls.md` / `merge_urls.py` job);
+- honour the **lanes / weighting and warm routes** the profile declares;
+- execute the standing **"at least two new orthogonal sources per run"** directive —
+  the source list is a **floor, not a ceiling** — and record the full reach of sites
+  hit (productive or not) for the dashboard's "Net cast" list.
+
+**Step 3 — keep the layers separate.** **Named orgs are NOT auto-expanded into manifest
+queries** — they stay in the soft layer. The manifest is role-type vocabulary; the soft
+layer is where named orgs, lanes, and orthogonal discovery live.
 
 ## 6. URLS SWEEP (required)
 `urls.md` is a flat, human-curated `flag, url` CSV (schema below). **Always go
@@ -193,7 +240,11 @@ templated output — no client-side filesystem reads — so it works from `file:
 ## 13. SELF-AUDIT (required)
 Surface on the dashboard **and** in `run-log.json`:
 - `manifest_version`;
-- queries run, and queries returning nothing;
+- **manifest ids run, and manifest ids null** (`queries_run` / `queries_null`);
+- **soft-layer coverage** — named orgs swept (`named_orgs_swept`), lanes touched
+  (`lanes_touched`), and the new orthogonal sources tried this run
+  (`orthogonal_sources_tried`). Both layers are audited, not just the manifest;
+- any **lint warnings** on the manifest (a banned token in a query string);
 - fetch failures and sources unreachable;
 - **profiles skipped at preflight** (`skipped_profiles`) — state → reason;
 - **unverified (`n`-flag) sources actually used** (`unverified_sources`);
@@ -208,6 +259,24 @@ Surface on the dashboard **and** in `run-log.json`:
 ---
 
 ## SCHEMAS (the contract for all files)
+
+### `targets.md` — query manifest + soft targeting layer
+Two layers in one file. **(1) The query manifest** — a delimited, parseable block:
+```
+<!-- manifest:begin -->
+Q01: digital project manager contract
+Q07: change communications charity
+<!-- manifest:end -->
+```
+One `Qnn: <query string>` per line; ids zero-padded, unique, **stable** (retired ids
+keep their number and are never reused — gaps are fine). Query strings carry only
+vocabulary (§4); `lint_manifest.py` audits the block. **(2) The soft targeting layer**
+— a clearly-labelled section, distinct from the manifest, holding named target orgs by
+category, lanes/weighting, warm routes, the standing orthogonal-sources directive, and
+any relocation-watch list. The soft layer is judgement, applied **after** the manifest,
+and is **never** auto-expanded into manifest queries (§5). Access-reliability tiers /
+fetch-methods may also live here (whether to promote them to an engine-level sources
+file is an open decision).
 
 ### `urls.md` — a flat, human-curated `flag, url` CSV
 One record per line: a single-character **status flag**, a comma, then the careers
@@ -291,11 +360,12 @@ Object keyed by `role_id`:
 
 ### `run-log.json` — one per run, archived under history/runs/<date>/
 Required keys as below; `write_runlog.py` validates them and fails loud on violation.
-The 1.1.0 self-audit keys (and `counts.closed`) are **optional** — validated only when
-present, so older logs still pass.
+The 1.1.0/1.2.0 self-audit keys (and `counts.closed`) are **optional** — validated only
+when present, so older logs still pass. `queries_run`/`queries_null` carry the manifest
+ids run / null.
 ```json
 {
-  "manifest_version": "1.1.0",
+  "manifest_version": "1.2.0",
   "run_date": "2026-06-27",
   "profile": "joel-rapid-bridging-work",
   "queries_run": ["Q01", "Q02", "Q03"],
@@ -310,7 +380,11 @@ present, so older logs still pass.
   "proposed_downgrades": [{"url": "example.org/careers", "from": "v", "to": "x",
                            "reason": "fetch failed (timeout) this run"}],
   "skipped_profiles": [{"profile": "joel-long-term-totnes-career",
-                        "reason": "PROFILE.md missing — required as the search spine"}]
+                        "reason": "PROFILE.md missing — required as the search spine"}],
+
+  "named_orgs_swept": ["Salvation Army", "British Red Cross"],
+  "lanes_touched": ["bridge", "remote-first"],
+  "orthogonal_sources_tried": ["a regional values-led board", "a sector newsletter"]
 }
 ```
 
@@ -349,6 +423,11 @@ is optional.
   JSON array over all `profiles/` subfolders when no `--profile`). Runnable = folder
   exists **and** non-empty `PROFILE.md`. Backs the enumeration annotations and the
   per-profile preflight skip.
+- **`lint_manifest.py`** — `--in profiles/<name>/targets.md` → audits the query
+  manifest: `{profile, query_count, id_range, ids, duplicate_ids,
+  banned_token_warnings, structural_errors}`. Structural errors (missing block,
+  unparseable line, malformed/duplicate id) **fail loud**; banned tokens in a query
+  string (§4) are warnings. Run before executing the manifest (§5).
 - **`mark_closed.py`** — `--role-id … --profile … [--reason …]` → sets the id's status
   to `closed` in `seen-roles.json` (stamping `closed_date`/`closed_reason`). Backs the
   agent-confirmed and manual close routes and the CLAUDE.md `mark <role-id> closed`

@@ -22,6 +22,12 @@ Optional self-audit keys (validated only if present, manifest_version 1.1.0+):
   proposed_downgrades : [{"url": str, "from": "v", "to": "x", "reason": str}, ...]
   skipped_profiles    : [{"profile": str, "reason": str}, ...]  # failed preflight
 
+Optional manifest / soft-layer coverage (manifest_version 1.2.0+):
+  named_orgs_swept       : [str, ...]   # soft-layer named orgs searched this run
+  lanes_touched          : [str, ...]   # which targeting lanes were worked
+  orthogonal_sources_tried : [str, ...] # the standing "≥2 new sources" directive
+  (manifest ids run / null are already carried by queries_run / queries_null.)
+
 Usage:
   python3 skill/lib/write_runlog.py --in runlog.json [--root .]
   cat runlog.json | python3 skill/lib/write_runlog.py
@@ -38,7 +44,9 @@ REQUIRED_STR_KEYS = ["manifest_version", "run_date", "profile"]
 COUNT_KEYS = ["new", "persisting", "removed", "applied_suppressed"]
 # Optional self-audit keys (manifest_version 1.1.0+); validated only if present.
 OPTIONAL_LIST_KEYS = ["unverified_sources", "broken_skips", "malformed_skips",
-                      "proposed_downgrades", "skipped_profiles"]
+                      "proposed_downgrades", "skipped_profiles",
+                      # manifest / soft-layer coverage (1.2.0+)
+                      "named_orgs_swept", "lanes_touched", "orthogonal_sources_tried"]
 
 
 def validate(log):

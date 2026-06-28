@@ -11,6 +11,7 @@
       "Bash(python3 skill/lib/mark_applied.py:*)",
       "Bash(python3 skill/lib/mark_closed.py:*)",
       "Bash(python3 skill/lib/validate_profile.py:*)",
+      "Bash(python3 skill/lib/lint_manifest.py:*)",
       "Bash(python3 -m py_compile skill/lib/*.py)",
       "Read(./**)",
       "Write(./profiles/**)",
