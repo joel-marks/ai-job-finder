@@ -19,7 +19,18 @@
       "Bash(git init *)",
       "Bash(git config *)",
       "Bash(git branch *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git check-ignore *)",
+      "Bash(git commit *)",
+      "Bash(git restore *)",
+      "Bash(git rm *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-remote *)",
+      "Bash(git ls-tree *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(git merge *)"
     ]
   }
 }
