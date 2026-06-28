@@ -1,0 +1,26 @@
+# ── PRIVACY RINGFENCE — userspace data never ships ──────────────────────────
+# Every subfolder of profiles/ is real, private search data. Ship the empty
+# folder (via .gitkeep) and nothing else. A pre-commit hook (.githooks/) backs
+# this up; see README "Privacy model".
+profiles/*
+!profiles/.gitkeep
+
+# Generated artefacts — emitted to disk every run, never committed
+/index.html
+**/dashboard.html
+**/dashboard-meta.json
+
+# Transient run files — regenerated every run
+_run-urls.json
+_run-*.json
+
+# Scratch / analysis dumps
+systemanalysis.txt
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc

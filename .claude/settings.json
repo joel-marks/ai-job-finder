@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(command -v tree)",
+      "Bash(python3 skill/lib/normalise.py:*)",
+      "Bash(python3 skill/lib/role_id.py:*)",
+      "Bash(python3 skill/lib/merge_urls.py:*)",
+      "Bash(python3 skill/lib/diff_roles.py:*)",
+      "Bash(python3 skill/lib/write_runlog.py:*)",
+      "Bash(python3 skill/lib/build_index.py:*)",
+      "Bash(python3 skill/lib/mark_applied.py:*)",
+      "Bash(python3 -m py_compile skill/lib/*.py)",
+      "Read(./**)",
+      "Write(./profiles/**)",
+      "Edit(./profiles/**)",
+      "Write(./index.html)",
+      "Write(./_run-urls.json)",
+      "Bash(chmod +x .githooks/pre-commit)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git branch *)",
+      "Bash(git add *)"
+    ]
+  }
+}

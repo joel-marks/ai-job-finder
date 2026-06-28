@@ -1,0 +1,28 @@
+#!/bin/sh
+# ── PRIVACY GUARD (shared, travels with the repo) ────────────────────────────
+# Rejects any staged path under profiles/ except profiles/.gitkeep.
+# Enabled repo-wide via:  git config core.hooksPath .githooks
+# This protects every clone, not just the original author's machine.
+
+# Staged paths (added/copied/modified/renamed), NUL-safe.
+offending=$(git diff --cached --name-only --diff-filter=ACMR -z \
+  | tr '\0' '\n' \
+  | grep -E '^profiles/' \
+  | grep -v -x 'profiles/.gitkeep')
+
+if [ -n "$offending" ]; then
+  echo "──────────────────────────────────────────────────────────────────────"
+  echo "COMMIT REJECTED: profile data must never be committed."
+  echo
+  echo "The following staged path(s) live under profiles/ and are blocked:"
+  echo "$offending" | sed 's/^/    /'
+  echo
+  echo "profiles/ is private userspace (real search data). Only profiles/.gitkeep"
+  echo "may be tracked. Unstage these paths and try again:"
+  echo
+  echo "    git restore --staged <path>"
+  echo "──────────────────────────────────────────────────────────────────────"
+  exit 1
+fi
+
+exit 0

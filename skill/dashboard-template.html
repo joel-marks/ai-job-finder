@@ -1,0 +1,196 @@
+Customize
+Skills
+Connectors
+Personal plugins
+
+Give Claude role-level expertise with plugins
+Skills
+canvas-template.html
+<!DOCTYPE html>
+<!--
+  BRIDGING-SEARCH CANVAS TEMPLATE
+  Fill the {{PLACEHOLDERS}} and repeat the marked blocks. Do NOT change the CSS
+  (the design system is fixed and approved). Keep prose in cells; wrap, don't truncate.
+ 
+  Placeholders:
+    {{DATE}}            e.g. 11 June 2026
+    {{SCOPE_LABEL}}     e.g. "wide net" or "AI/editorial remit"
+    {{H1}}              one-line thesis for this run
+    {{PREAMBLE}}        the "Ordered so..." logic — now small + full width
+    {{SITES_LIST}}      EVERY site hit this run (not just ones that yielded results),
+                        as comma-separated <span>NAME</span> items
+    {{SITES_COUNT}}     integer count of distinct sites
+    {{BASELINE}}        income baseline to beat, from PROFILE.md
+    {{DAYRATE}}         day-rate floor, from PROFILE.md
+    {{SECTIONS}}        section blocks, each containing item blocks (see templates at bottom)
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bridging search · {{DATE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2725; --paper:#e8ede9; --card:#fbfcfb; --muted:#5c6661;
+    --rule:#d4dbd5; --estuary:#2f6f6b; --tide:#3b6ea5; --slate:#6b7470;
+    --amber:#a9661a; --amber-bg:#f6ecda; --estuary-bg:#e3eeec;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif; line-height:1.5;
+    -webkit-font-smoothing:antialiased; padding:0 0 64px;
+  }
+  .wrap{max-width:860px; margin:0 auto; padding:0 20px;}
+ 
+  /* Header */
+  header{padding:40px 0 18px;}
+  .eyebrow{font-family:"Space Mono",monospace; font-size:12px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--estuary); margin:0 0 10px;}
+  h1{font-family:"Spectral",serif; font-weight:600; font-size:clamp(30px,5vw,44px);
+    line-height:1.04; margin:0 0 12px; letter-spacing:-.01em;}
+  /* Preamble: small + full width so the data starts sooner */
+  .lede{font-size:13px; color:var(--muted); margin:0; max-width:none;}
+  .lede strong{color:var(--ink); font-weight:600;}
+ 
+  /* Sites searched — reach of the net, small font, full width, top of doc */
+  .sites{margin:16px 0 0; padding:11px 14px; background:var(--card);
+    border:1px solid var(--rule); border-radius:10px;}
+  .sites h3{font-family:"Space Mono",monospace; font-size:10.5px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--slate); margin:0 0 6px;}
+  .sites .list{font-family:"Space Mono",monospace; font-size:11px; color:var(--muted);
+    line-height:1.7;}
+  .sites .list span:not(:last-child)::after{content:" · "; color:var(--rule);}
+ 
+  /* Legend */
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:14px 0 4px;
+    padding:14px 16px; background:var(--card); border:1px solid var(--rule); border-radius:12px;}
+  .legend span{font-size:12.5px; color:var(--muted); display:inline-flex; align-items:center; gap:7px;}
+  .swatch{width:11px; height:11px; border-radius:3px; flex:none;}
+  .t1{background:var(--estuary);} .t2{background:var(--tide);} .t3{background:var(--slate);}
+ 
+  /* Section heads */
+  .sec{margin:38px 0 14px; display:flex; align-items:baseline; gap:12px;}
+  .sec h2{font-family:"Spectral",serif; font-weight:600; font-size:21px; margin:0;}
+  .sec .count{font-family:"Space Mono",monospace; font-size:12px; color:var(--muted);}
+  .sec-note{font-size:13.5px; color:var(--muted); margin:-6px 0 16px; max-width:64ch;}
+ 
+  /* Accordion row */
+  details{background:var(--card); border:1px solid var(--rule); border-radius:12px;
+    margin:0 0 10px; overflow:hidden; position:relative;}
+  details[open]{box-shadow:0 4px 22px -14px rgba(27,39,37,.4);}
+  .rail{position:absolute; left:0; top:0; bottom:0; width:4px;}
+  .rail.t1{background:var(--estuary);} .rail.t2{background:var(--tide);} .rail.t3{background:var(--slate);}
+  summary{list-style:none; cursor:pointer; padding:16px 18px 16px 22px; display:flex;
+    flex-direction:column; gap:9px;}
+  summary::-webkit-details-marker{display:none;}
+  summary:focus-visible{outline:2px solid var(--estuary); outline-offset:-2px;}
+  .row-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .title{font-weight:600; font-size:16px; line-height:1.25;}
+  .org{color:var(--muted); font-weight:500;}
+  .chev{flex:none; color:var(--slate); transition:transform .2s ease; margin-top:3px;}
+  details[open] .chev{transform:rotate(180deg);}
+  .chips{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.02em;
+    padding:3px 8px; border-radius:6px; background:var(--estuary-bg); color:var(--estuary); white-space:nowrap;}
+  .chip.flag{background:var(--amber-bg); color:var(--amber);}
+  .chip.plain{background:#eef1ee; color:var(--slate);}
+  .dots{font-size:13px; letter-spacing:2px; color:var(--estuary); white-space:nowrap;}
+ 
+  /* Body */
+  .body{padding:4px 18px 20px 22px; border-top:1px solid var(--rule); margin-top:2px;}
+  .body dl{display:grid; grid-template-columns:auto 1fr; gap:7px 16px; margin:14px 0 0; font-size:14px;}
+  .body dt{font-family:"Space Mono",monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--slate); padding-top:2px;}
+  .body dd{margin:0;}
+  .read{margin:16px 0 0; padding:13px 15px; background:var(--estuary-bg); border-radius:9px; font-size:14px;}
+  .read b{color:var(--estuary);}
+  .flagline{margin:12px 0 0; padding:11px 14px; background:var(--amber-bg); border-radius:9px;
+    font-size:13.5px; color:#6e4410;}
+  .actions{margin:16px 0 0;}
+  a.go{display:inline-block; font-family:"Space Mono",monospace; font-size:12.5px;
+    text-decoration:none; color:#fff; background:var(--ink); padding:9px 15px; border-radius:8px;}
+  a.go:hover{background:var(--estuary);}
+  a.go:focus-visible{outline:2px solid var(--estuary); outline-offset:2px;}
+  .verify{font-size:12px; color:var(--muted); margin:9px 0 0;}
+ 
+  footer{margin-top:40px; padding-top:20px; border-top:1px solid var(--rule); font-size:13px; color:var(--muted);}
+  @media (max-width:540px){
+    .body dl{grid-template-columns:1fr; gap:3px 0;}
+    .body dt{padding-top:9px;}
+  }
+  @media (prefers-reduced-motion:reduce){.chev{transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="eyebrow">Bridging search · {{DATE}} · {{SCOPE_LABEL}}</p>
+  <h1>{{H1}}</h1>
+  <p class="lede">{{PREAMBLE}} Baseline to beat: <strong>{{BASELINE}}</strong>. Day-rate floor: <strong>{{DAYRATE}}</strong>.</p>
+ 
+  <div class="sites">
+    <h3>Net cast — {{SITES_COUNT}} sites searched this run</h3>
+    <div class="list">{{SITES_LIST}}</div>
+  </div>
+ 
+  <div class="legend">
+    <span><i class="swatch t1"></i>Tier 1 — 2–4 month fit</span>
+    <span><i class="swatch t2"></i>Tier 2 — up to 12 months</span>
+    <span><i class="swatch t3"></i>Tier 3 — permanent / flagged</span>
+    <span>●●●○○ = my fit read, not the employer's</span>
+  </div>
+</header>
+ 
+{{SECTIONS}}
+ 
+<footer>
+  Tiering, pro-rata and off-payroll flags reflect my best read of listings as of {{DATE}}; several may need a direct check before acting. Dots are my fit assessment, not the employer's. Not legal or financial advice — confirm any contract's IR35/employment status with an accountant.
+</footer>
+</div>
+</body>
+</html>
+ 
+<!-- =================================================================
+     BLOCK TEMPLATES — copy, fill, repeat. Delete this comment block in output.
+ 
+  SECTION (one per group, e.g. region/strategy band):
+  ---------------------------------------------------------------
+  <div class="sec"><h2>{{SECTION_TITLE}}</h2><span class="count">{{N}} items</span></div>
+  <p class="sec-note">{{SECTION_NOTE}}</p>
+  {{ITEMS}}
+ 
+  ITEM (one per role; rail class = tier; chips = key facts; dots = fit 0–5):
+  ---------------------------------------------------------------
+  <details>
+    <span class="rail t2"></span>
+    <summary>
+      <div class="row-top"><div class="title">{{ROLE}} <span class="org">· {{ORG}}</span></div><span class="chev">▾</span></div>
+      <div class="chips">
+        <span class="chip plain">{{LOCATION_OR_BASIS}}</span>
+        <span class="chip">{{KEY_FACT}}</span>
+        <span class="chip flag">{{WARNING}}</span>
+        <span class="dots">●●●○○</span>
+      </div>
+    </summary>
+    <div class="body">
+      <dl>
+        <dt>Tier</dt><dd>{{TIER_EXPLAIN}}</dd>
+        <dt>Basis</dt><dd>{{EMPLOYMENT_BASIS_AND_IR35}}</dd>
+        <dt>Income</dt><dd>{{INCOME_AND_PRORATA_VS_BASELINE}}</dd>
+        <dt>Scope</dt><dd>{{SCOPE}}</dd>
+      </dl>
+      <div class="read"><b>My read:</b> {{CONTEXT_NOTE_TIED_TO_PROFILE}}</div>
+      <div class="actions"><a class="go" href="{{URL}}" target="_blank" rel="noopener">{{LINK_LABEL}} ↗</a></div>
+      <p class="verify">Verify: {{WHAT_TO_CONFIRM}}</p>
+    </div>
+  </details>
+ 
+  Optional amber flag line inside .body for a salient warning:
+  <div class="flagline">{{FLAG_TEXT}}</div>
+================================================================= -->
+ 
+
