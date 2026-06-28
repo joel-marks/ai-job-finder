@@ -22,11 +22,21 @@ The engine is generic. It never hardcodes one profile's ranking, income, or geog
 
 ## MANDATORY first action on any run
 Before searching anything:
-1. Enumerate the subfolders of `profiles/`.
-2. Present them to the user as a **numbered list** — these are the searches.
+1. Enumerate the subfolders of `profiles/` by running
+   `python3 skill/lib/validate_profile.py` (no args). It returns, for every
+   subfolder, `{profile, valid, reason}`.
+2. Present them to the user as a **numbered list** — these are the searches —
+   annotating each **runnable** or **not-runnable: <reason>**. An empty folder, or
+   one lacking a non-empty `PROFILE.md`, still appears but is clearly flagged
+   (users may create empty folders; this must not break enumeration).
 3. Ask which to run: one, several, or all.
 4. **Wait for the selection.** Never assume. Do not begin retrieval until the user
    has chosen.
+
+If **no** subfolder is runnable (e.g. a fresh clone), say so plainly and tell the
+user to add a search at `profiles/<name>/` with a non-empty `PROFILE.md` (the search
+spine), pointing to the README and the forthcoming `examples/` starter profile. Do
+not invent `examples/` if it does not yet exist.
 
 ## How a run proceeds
 Follow `skill/SKILL.md` — the generic run procedure — once per selected profile. All
@@ -43,6 +53,11 @@ Your value is judgement; arithmetic and bookkeeping are the scripts' job.
   `skill/lib/mark_applied.py` against the relevant profile: records the application
   in that profile's `applications.json` and flips the id's status to `applied` in its
   `seen-roles.json`, so the role is pulled from new-leads and never re-surfaced.
+- **Mark closed:** `mark <role-id> closed [reason]` — runs
+  `skill/lib/mark_closed.py` against the relevant profile: sets the id's status to
+  `closed` in its `seen-roles.json` (the manual / agent-confirmed close override).
+  Use when a role is known gone before the deterministic N-absent-runs threshold in
+  `diff_roles.py` catches it. Never edit `seen-roles.json` by hand.
 
 ## Precedence
 The user's **latest instruction in the session overrides the files.** Where a file

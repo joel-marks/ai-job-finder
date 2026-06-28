@@ -3,32 +3,42 @@
 
 Pure set logic against the profile's seen-roles.json and applications.json.
 It updates seen-roles.json in place and prints the run partition to stdout.
-Status transitions to "closed" stay the agent's call after verification — this
-script only FLAGS removed-candidates; it never closes anything.
+
+CLOSE-PATH (deterministic route). Absence from a single run is NOT closure — a
+query can simply miss a still-open ad. Each live ledger record carries an
+`absent_runs` counter (default 0 when missing, so old ledgers upgrade cleanly):
+  - present this run            -> absent_runs reset to 0
+  - absent this run (status live) -> absent_runs incremented
+  - absent_runs >= threshold    -> status auto-set to "closed" (default N=2,
+                                   exposed as --close-threshold)
+Below the threshold an absent live role is still emitted as a removed_candidate
+for the agent's attention. applied and excluded roles are never auto-closed.
+(The agent-confirmed and manual close routes go through mark_closed.py.)
 
 Inputs:
-  --roles         JSON array of this run's roles, each WITH a role_id
-                  (i.e. the output of role_id.py, optionally carrying a
-                  "provenance" list or a "source" string).
-  --seen          path to the profile's seen-roles.json (created if absent)
-  --applications  path to the profile's applications.json (created if absent)
-  --run-date      YYYY-MM-DD (default: today)
+  --roles            JSON array of this run's roles, each WITH a role_id
+                     (i.e. the output of role_id.py, optionally carrying a
+                     "provenance" list or a "source" string).
+  --seen             path to the profile's seen-roles.json (created if absent)
+  --applications     path to the profile's applications.json (created if absent)
+  --run-date         YYYY-MM-DD (default: today)
+  --close-threshold  consecutive absent runs before auto-close (default: 2)
 
 Partition printed to stdout:
   {"new": [...], "persisting": [...], "removed_candidates": [...],
-   "applied_suppressed": [...]}
+   "applied_suppressed": [...], "auto_closed": [...]}
 each element is {role_id, org, title, url}.
 
 Behaviour per run role:
   - id in applications.json   -> applied_suppressed (ledger bumped, status="applied")
   - else id already in seen   -> persisting (bump last_seen, runs_seen, merge provenance)
   - else                      -> new (fresh ledger entry, status="live")
-removed_candidates = ledger ids with status "live" that are absent this run.
 
 Usage:
   python3 skill/lib/diff_roles.py --roles run.json \
       --seen profiles/<p>/history/seen-roles.json \
-      --applications profiles/<p>/history/applications.json --run-date 2026-06-27
+      --applications profiles/<p>/history/applications.json \
+      --run-date 2026-06-27 --close-threshold 2
 """
 import sys
 import json
@@ -76,14 +86,21 @@ def main():
     ap.add_argument("--seen", required=True, help="seen-roles.json path")
     ap.add_argument("--applications", required=True, help="applications.json path")
     ap.add_argument("--run-date", default=datetime.date.today().isoformat())
+    ap.add_argument("--close-threshold", type=int, default=2,
+                    help="consecutive absent runs before a live role auto-closes")
     args = ap.parse_args()
+
+    if args.close_threshold < 1:
+        sys.exit("diff_roles.py: --close-threshold must be >= 1")
 
     roles = json.loads(open(args.roles, encoding="utf-8").read())
     seen = _load(args.seen, {})
     applications = _load(args.applications, {})
     run_date = args.run_date
+    threshold = args.close_threshold
 
-    partition = {"new": [], "persisting": [], "removed_candidates": [], "applied_suppressed": []}
+    partition = {"new": [], "persisting": [], "removed_candidates": [],
+                 "applied_suppressed": [], "auto_closed": []}
     this_run_ids = set()
 
     for role in roles:
@@ -109,6 +126,7 @@ def main():
             entry["last_seen"] = run_date
             entry["runs_seen"] = entry.get("runs_seen", 0) + 1
             entry["provenance"] = _merge_unique(entry.get("provenance", []), incoming_sources)
+            entry["absent_runs"] = 0  # reappeared -> reset the absence streak
             partition["persisting"].append(_slim(rid, entry))
         else:
             entry = {
@@ -119,13 +137,25 @@ def main():
                 "last_seen": run_date,
                 "runs_seen": 1,
                 "status": "live",
+                "absent_runs": 0,
                 "provenance": incoming_sources,
             }
             seen[rid] = entry
             partition["new"].append(_slim(rid, entry))
 
+    # Absence / close-path: only live roles absent this run are tracked.
     for rid, entry in seen.items():
-        if entry.get("status") == "live" and rid not in this_run_ids:
+        if rid in this_run_ids or entry.get("status") != "live":
+            continue
+        entry["absent_runs"] = entry.get("absent_runs", 0) + 1
+        if entry["absent_runs"] >= threshold:
+            entry["status"] = "closed"
+            entry["closed_date"] = run_date
+            entry["closed_reason"] = (
+                f"absent {entry['absent_runs']} consecutive runs "
+                f"(threshold {threshold})")
+            partition["auto_closed"].append(_slim(rid, entry))
+        else:
             partition["removed_candidates"].append(_slim(rid, entry))
 
     with open(args.seen, "w", encoding="utf-8") as fh:

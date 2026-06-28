@@ -3,7 +3,7 @@
 
 Writes profiles/<profile>/history/runs/<run_date>/run-log.json.
 
-run-log schema (all keys required):
+run-log schema (required keys):
   manifest_version : str
   run_date         : str  (YYYY-MM-DD)
   profile          : str
@@ -13,6 +13,14 @@ run-log schema (all keys required):
   sources_hit      : [{"name": str, "count": int}, ...]
   counts           : {"new": int, "persisting": int,
                       "removed": int, "applied_suppressed": int}
+                     (optional extra count: "closed": int)
+
+Optional self-audit keys (validated only if present, manifest_version 1.1.0+):
+  unverified_sources  : [str, ...]   # n-flagged urls used this run
+  broken_skips        : [str, ...]   # x-flagged urls skipped by merge_urls
+  malformed_skips     : [str, ...]   # unparseable urls.md rows
+  proposed_downgrades : [{"url": str, "from": "v", "to": "x", "reason": str}, ...]
+  skipped_profiles    : [{"profile": str, "reason": str}, ...]  # failed preflight
 
 Usage:
   python3 skill/lib/write_runlog.py --in runlog.json [--root .]
@@ -28,6 +36,9 @@ DEFAULT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 REQUIRED_LIST_KEYS = ["queries_run", "queries_null", "fetch_failures"]
 REQUIRED_STR_KEYS = ["manifest_version", "run_date", "profile"]
 COUNT_KEYS = ["new", "persisting", "removed", "applied_suppressed"]
+# Optional self-audit keys (manifest_version 1.1.0+); validated only if present.
+OPTIONAL_LIST_KEYS = ["unverified_sources", "broken_skips", "malformed_skips",
+                      "proposed_downgrades", "skipped_profiles"]
 
 
 def validate(log):
@@ -53,6 +64,11 @@ def validate(log):
         for k in COUNT_KEYS:
             if not isinstance(counts.get(k), int):
                 errors.append(f"counts.{k} must be an int")
+        if "closed" in counts and not isinstance(counts.get("closed"), int):
+            errors.append("counts.closed must be an int")
+    for k in OPTIONAL_LIST_KEYS:
+        if k in log and not isinstance(log.get(k), list):
+            errors.append(f"'{k}' must be a list when present")
     return errors
 
 

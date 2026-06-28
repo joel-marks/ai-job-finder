@@ -9,6 +9,8 @@
       "Bash(python3 skill/lib/write_runlog.py:*)",
       "Bash(python3 skill/lib/build_index.py:*)",
       "Bash(python3 skill/lib/mark_applied.py:*)",
+      "Bash(python3 skill/lib/mark_closed.py:*)",
+      "Bash(python3 skill/lib/validate_profile.py:*)",
       "Bash(python3 -m py_compile skill/lib/*.py)",
       "Read(./**)",
       "Write(./profiles/**)",
@@ -30,7 +32,8 @@
       "Bash(git ls-tree *)",
       "Bash(git commit -q -m ' *)",
       "Bash(echo \"exit: $?\")",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(echo \"commit exit: $?\")"
     ]
   }
 }
