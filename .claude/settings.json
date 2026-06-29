@@ -34,7 +34,13 @@
       "Bash(git commit -q -m ' *)",
       "Bash(echo \"exit: $?\")",
       "Bash(git merge *)",
-      "Bash(echo \"commit exit: $?\")"
+      "Bash(echo \"commit exit: $?\")",
+      "Bash(git checkout *)",
+      "Bash(git rev-list *)",
+      "Bash(awk '{print \"behind=\"$1\"  ahead=\"$2}')",
+      "Bash(grep -E 'settings\\\\.local\\\\.json$|web-allowlist\\\\.txt$')",
+      "Bash(grep -E '^profiles/|settings\\\\.local\\\\.json$|web-allowlist\\\\.txt$')",
+      "Bash(echo \"hooksPath = $\\(git config core.hooksPath\\)\")"
     ]
   }
 }
