@@ -21,41 +21,71 @@ import argparse
 
 DEFAULT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Design system reused verbatim from skill/dashboard-template.html: the same Google
+# Fonts import and :root token palette, inlined so the page stands alone under file://.
+STYLE = """
+  :root{
+    --ink:#1b2725; --paper:#e8ede9; --card:#fbfcfb; --muted:#5c6661;
+    --rule:#d4dbd5; --estuary:#2f6f6b; --tide:#3b6ea5; --slate:#6b7470;
+    --amber:#a9661a; --amber-bg:#f6ecda; --estuary-bg:#e3eeec;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif; line-height:1.5;
+    -webkit-font-smoothing:antialiased; padding:0 0 64px;
+  }
+  .wrap{max-width:860px; margin:0 auto; padding:0 20px;}
+
+  /* Header — same eyebrow / Spectral treatment as the dashboard */
+  header{padding:40px 0 18px;}
+  .eyebrow{font-family:"Space Mono",monospace; font-size:12px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--estuary); margin:0 0 10px;}
+  h1{font-family:"Spectral",serif; font-weight:600; font-size:clamp(30px,5vw,44px);
+    line-height:1.04; margin:0 0 12px; letter-spacing:-.01em;}
+  .lede{font-size:13px; color:var(--muted); margin:0; max-width:none;}
+  .lede strong{color:var(--ink); font-weight:600;}
+
+  /* Search card */
+  .card{background:var(--card); border:1px solid var(--rule); border-radius:12px;
+    padding:18px 20px; margin:0 0 14px;}
+  .card:hover{box-shadow:0 4px 22px -14px rgba(27,39,37,.4);}
+  .card .name{font-family:"Spectral",serif; font-weight:600; font-size:19px; margin:0 0 4px;}
+  .card .meta{font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--slate); margin:0 0 12px;}
+  .counts{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px;}
+  .pill{font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.02em;
+    padding:3px 8px; border-radius:6px; background:var(--estuary-bg); color:var(--estuary); white-space:nowrap;}
+  .status{font-size:14px; color:var(--ink); margin:0 0 16px;}
+
+  /* Button — the dashboard's a.go, ink -> estuary on hover */
+  a.go{display:inline-block; font-family:"Space Mono",monospace; font-size:12.5px;
+    text-decoration:none; color:#fff; background:var(--ink); padding:9px 15px; border-radius:8px;}
+  a.go:hover{background:var(--estuary);}
+  a.go:focus-visible{outline:2px solid var(--estuary); outline-offset:2px;}
+
+  .empty{background:var(--card); border:1px solid var(--rule); border-radius:12px;
+    padding:28px 20px; color:var(--muted); font-size:14px; text-align:center;}
+  footer{margin-top:40px; padding-top:20px; border-top:1px solid var(--rule); font-size:13px; color:var(--muted);}
+"""
+
 PAGE = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Job searches · index</title>
-<style>
-  :root{{--ink:#1b2725;--paper:#e8ede9;--card:#fbfcfb;--muted:#5c6661;
-    --rule:#d4dbd5;--estuary:#2f6f6b;}}
-  *{{box-sizing:border-box;}}
-  body{{margin:0;background:var(--paper);color:var(--ink);
-    font-family:"Inter",system-ui,sans-serif;line-height:1.5;padding:0 0 64px;}}
-  .wrap{{max-width:820px;margin:0 auto;padding:0 20px;}}
-  header{{padding:44px 0 8px;}}
-  h1{{font-family:"Spectral",Georgia,serif;font-weight:600;font-size:34px;margin:0 0 6px;}}
-  .sub{{color:var(--muted);font-size:14px;margin:0;}}
-  .card{{display:block;text-decoration:none;color:inherit;background:var(--card);
-    border:1px solid var(--rule);border-radius:12px;padding:18px 20px;margin:16px 0;}}
-  .card:hover{{box-shadow:0 4px 22px -14px rgba(27,39,37,.4);}}
-  .name{{font-weight:600;font-size:18px;margin:0 0 2px;}}
-  .meta{{font-family:"Space Mono",ui-monospace,monospace;font-size:12px;color:var(--muted);margin:0 0 8px;}}
-  .counts{{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px;}}
-  .pill{{font-family:"Space Mono",ui-monospace,monospace;font-size:11px;
-    background:#e3eeec;color:var(--estuary);border-radius:6px;padding:3px 8px;}}
-  .status{{font-size:13.5px;color:var(--ink);margin:0;}}
-  .empty{{color:var(--muted);font-size:14px;margin:24px 0;}}
-  footer{{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);
-    font-size:12.5px;color:var(--muted);}}
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>{style}</style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <h1>Job searches</h1>
-  <p class="sub">{count} search{plural} with a current dashboard. Static index — open any card from disk.</p>
+  <p class="eyebrow">Job searches · index</p>
+  <h1>All searches</h1>
+  <p class="lede">{count} search{plural} with a current dashboard. Static index — open any card straight from disk.</p>
 </header>
 {cards}
 <footer>Generated by build_index.py from each profile's dashboard-meta.json. No live data is read at view-time.</footer>
@@ -64,12 +94,13 @@ PAGE = """<!DOCTYPE html>
 </html>
 """
 
-CARD = """<a class="card" href="{href}">
+CARD = """<div class="card">
   <p class="name">{name}</p>
-  <p class="meta">last run: {last_run}</p>
+  <p class="meta">last run · {last_run}</p>
   <div class="counts">{pills}</div>
   <p class="status">{status}</p>
-</a>"""
+  <a class="go" href="{href}">Open dashboard →</a>
+</div>"""
 
 
 def esc(v):
@@ -106,8 +137,9 @@ def main():
             status=esc(meta.get("status_line", "")),
         ))
 
-    body = "\n".join(cards) if cards else '<p class="empty">No dashboards yet. Run a search to produce one.</p>'
+    body = "\n".join(cards) if cards else '<div class="empty">No searches have produced a dashboard yet.</div>'
     page = PAGE.format(
+        style=STYLE,
         count=len(cards),
         plural="" if len(cards) == 1 else "es",
         cards=body,

@@ -1,11 +1,3 @@
-Customize
-Skills
-Connectors
-Personal plugins
-
-Give Claude role-level expertise with plugins
-Skills
-canvas-template.html
 <!DOCTYPE html>
 <!--
   BRIDGING-SEARCH CANVAS TEMPLATE
@@ -13,6 +5,8 @@ canvas-template.html
   (the design system is fixed and approved). Keep prose in cells; wrap, don't truncate.
  
   Placeholders:
+    {{INDEX_HREF}}      relative path to the root lander (../../index.html for the live
+                        dashboard); see SKILL.md §10 for archived snapshots
     {{DATE}}            e.g. 11 June 2026
     {{SCOPE_LABEL}}     e.g. "wide net" or "AI/editorial remit"
     {{H1}}              one-line thesis for this run
@@ -21,7 +15,6 @@ canvas-template.html
                         as comma-separated <span>NAME</span> items
     {{SITES_COUNT}}     integer count of distinct sites
     {{BASELINE}}        income baseline to beat, from PROFILE.md
-    {{DAYRATE}}         day-rate floor, from PROFILE.md
     {{SECTIONS}}        section blocks, each containing item blocks (see templates at bottom)
 -->
 <html lang="en">
@@ -128,9 +121,10 @@ canvas-template.html
 <body>
 <div class="wrap">
 <header>
+  <a class="eyebrow" href="{{INDEX_HREF}}">← All searches</a>
   <p class="eyebrow">Bridging search · {{DATE}} · {{SCOPE_LABEL}}</p>
   <h1>{{H1}}</h1>
-  <p class="lede">{{PREAMBLE}} Baseline to beat: <strong>{{BASELINE}}</strong>. Day-rate floor: <strong>{{DAYRATE}}</strong>.</p>
+  <p class="lede">{{PREAMBLE}} Baseline to beat: <strong>{{BASELINE}}</strong>.</p>
  
   <div class="sites">
     <h3>Net cast — {{SITES_COUNT}} sites searched this run</h3>

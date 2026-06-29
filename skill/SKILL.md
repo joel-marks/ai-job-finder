@@ -225,6 +225,10 @@ Fill `skill/dashboard-template.html` (the canvas template — placeholders like
 and write to `profiles/<name>/dashboard.html`. Render against the template **as-is** —
 it is revised in a later sprint; do not modify it now. Also write a
 `dashboard-meta.json` sidecar next to it (schema below) for `build_index.py`.
+Set `{{INDEX_HREF}}` to the lander's relative path — `../../index.html` for the live
+dashboard at `profiles/<name>/dashboard.html`; for an archived snapshot at
+`history/runs/<date>/dashboard.html` omit the back-link (cleanest), or set the deeper
+`../../../../../index.html` (five levels) if kept.
 
 ## 11. ARCHIVE
 Into `profiles/<name>/history/runs/<YYYY-MM-DD>/`:
