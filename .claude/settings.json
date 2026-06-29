@@ -40,7 +40,8 @@
       "Bash(awk '{print \"behind=\"$1\"  ahead=\"$2}')",
       "Bash(grep -E 'settings\\\\.local\\\\.json$|web-allowlist\\\\.txt$')",
       "Bash(grep -E '^profiles/|settings\\\\.local\\\\.json$|web-allowlist\\\\.txt$')",
-      "Bash(echo \"hooksPath = $\\(git config core.hooksPath\\)\")"
+      "Bash(echo \"hooksPath = $\\(git config core.hooksPath\\)\")",
+      "Bash(python3 - /private/tmp/claude-501/-Users-joel-dev-vs-code-ai-job-finder/51264079-0f01-4c66-a328-139a417c9212/scratchpad/fixture)"
     ]
   }
 }
