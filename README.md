@@ -1,6 +1,6 @@
 # ai-job-finder
 
-An **agentic, Claude-Code-native job-search system** that you run by conversation.
+An **agentic, Claude-Code-native job-search system** operating in VS Code (or similar) that you run by conversation.
 
 There is no webapp, no server, and nothing to deploy. You open the repo in
 [Claude Code](https://claude.com/claude-code) and **Claude itself is the engine**: it
@@ -144,6 +144,25 @@ To enable (entirely local, gitignored):
 The `.example` also documents a blanket **tier (b)** (auto-approve all fetches) with its
 honest tradeoff — more convenient, but it removes the one stop that catches exfiltration,
 so it's weaker for any profile holding sensitive data. Tier (a) is the default.
+
+## Permissions (local)
+
+Claude Code **appends every runtime-approved permission to `.claude/settings.json`** as a
+run proceeds. On a public repo that tracked file would churn on every run — and has, once,
+captured a machine-specific absolute path. So `.claude/settings.json` is **gitignored and
+kept local**; the curated baseline ships as a committed template instead. This mirrors the
+`settings.local.json` / `web-allowlist.txt` pattern: `.example` is tracked, the live file
+is not.
+
+After cloning, copy the baseline into place (one step, like enabling the hook):
+
+```sh
+cp .claude/settings.json.example .claude/settings.json
+```
+
+Your local `.claude/settings.json` then holds the stable baseline plus whatever
+permissions accrue during your runs — and none of it is ever committed. Edit the
+**committed** baseline only by editing `.claude/settings.json.example`.
 
 ## Current status / limitations
 

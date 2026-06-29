@@ -14,8 +14,12 @@ profiles/*
 _run-urls.json
 _run-*.json
 
-# Local-only web-access opt-in (never committed; see README "Web access").
-# The hook script (.claude/hooks/) and the .example template ARE committed.
+# Local Claude Code config (never committed). Claude Code appends runtime-approved
+# permissions to .claude/settings.json on every run, so it is kept LOCAL to stop that
+# churn (incl. machine-specific paths) from reaching the public repo. Clone-time setup:
+# copy .claude/settings.json.example -> .claude/settings.json (see README "Permissions").
+# The .example templates and the hook script (.claude/hooks/) ARE committed.
+.claude/settings.json
 .claude/settings.local.json
 .claude/web-allowlist.txt
 
